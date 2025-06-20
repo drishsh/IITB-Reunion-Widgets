@@ -3,26 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Stats</title>
   <style>
     body {
-      background-color: #4e464c;
-      color: #ffd700;
+      background-color: #ffd700;
+      color: #000000;
       font-family: 'Segoe UI', sans-serif;
       display: flex;
-      flex-direction: column;
       justify-content: center;
       align-items: center;
-      min-height: 100vh;
-      margin: 0;
       text-align: center;
+      height: 100vh;
+      margin: 0;
     }
-    h1 {
+    .stat-line {
       font-size: 2em;
-      margin-bottom: 0.5em;
-    }
-    .stat {
-      font-size: 1.4em;
-      margin: 0.4em 0;
+      font-weight: bold;
+      margin: 0.2em 0;
     }
     #error {
       color: red;
@@ -31,15 +28,29 @@
   </style>
 </head>
 <body>
-  <h1>Alumni Stats</h1>
-  <div id="loading" class="stat">Loading...</div>
+  <div id="loading" class="stat-line">Loading...</div>
   <div id="output" style="display: none;">
-    <div class="stat" id="alumni-count"></div>
-    <div class="stat" id="city-count"></div>
+    <div class="stat-line" id="alumni-count"></div>
+    <div class="stat-line">Registered From</div>
+    <div class="stat-line" id="city-count"></div>
   </div>
   <div id="error"></div>
 
   <script>
+    function animateCount(elementId, targetValue, label) {
+      const el = document.getElementById(elementId);
+      let current = 0;
+      const duration = 1000; // total duration of animation (in ms)
+      const stepTime = Math.max(10, duration / targetValue);
+      const interval = setInterval(() => {
+        current++;
+        el.textContent = `${current} ${label}`;
+        if (current >= targetValue) {
+          clearInterval(interval);
+        }
+      }, stepTime);
+    }
+
     fetch("https://script.google.com/macros/s/AKfycbxyemkkBH6u-Eu9oefsvHXtiqwjCowBYBl5DC2BkpCSvxH4QXc7sGHkK38O2c4JqYVzfQ/exec")
       .then(response => {
         if (!response.ok) throw new Error("Network response was not ok");
@@ -48,8 +59,9 @@
       .then(data => {
         document.getElementById("loading").style.display = "none";
         document.getElementById("output").style.display = "block";
-        document.getElementById("alumni-count").textContent = `Alumni Registered: ${data.alumni || 0}`;
-        document.getElementById("city-count").textContent = `Cities Represented: ${data.cities || 0}`;
+
+        animateCount("alumni-count", data.alumni || 0, "Alumni");
+        animateCount("city-count", data.cities || 0, "Cities");
       })
       .catch(error => {
         document.getElementById("loading").style.display = "none";
