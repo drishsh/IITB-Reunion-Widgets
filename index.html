@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Alumni Stats</title>
   <style>
     body {
       background-color: #4e464c;
@@ -49,8 +48,8 @@
       .then(data => {
         document.getElementById("loading").style.display = "none";
         document.getElementById("output").style.display = "block";
-        document.getElementById("alumni-count").textContent = `🎓 Alumni Registered: ${data.alumni || 0}`;
-        document.getElementById("city-count").textContent = `📍 Cities Represented: ${data.cities || 0}`;
+        document.getElementById("alumni-count").textContent = `Alumni Registered: ${data.alumni || 0}`;
+        document.getElementById("city-count").textContent = `Cities Represented: ${data.cities || 0}`;
       })
       .catch(error => {
         document.getElementById("loading").style.display = "none";
