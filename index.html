@@ -19,11 +19,11 @@
     }
     h1 {
       font-size: 2em;
-      margin-bottom: 0.2em;
+      margin-bottom: 0.5em;
     }
     .stat {
-      font-size: 1.5em;
-      margin: 10px 0;
+      font-size: 1.4em;
+      margin: 0.4em 0;
     }
     #error {
       color: red;
@@ -41,11 +41,9 @@
   <div id="error"></div>
 
   <script>
-    fetch("https://script.google.com/macros/s/AKfycbzhJ7T989xr1BaS129nnjDeld13vKU0-ufQqi0l30ZOZUgSlsZkvD5gZMkNnfbmgmr6bQ/exec")
+    fetch("https://script.google.com/macros/s/AKfycbxyemkkBH6u-Eu9oefsvHXtiqwjCowBYBl5DC2BkpCSvxH4QXc7sGHkK38O2c4JqYVzfQ/exec")
       .then(response => {
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
+        if (!response.ok) throw new Error("Network response was not ok");
         return response.json();
       })
       .then(data => {
@@ -56,8 +54,8 @@
       })
       .catch(error => {
         document.getElementById("loading").style.display = "none";
-        document.getElementById("error").textContent = "Error loading data. Please try again later.";
-        console.error("Error fetching data:", error);
+        document.getElementById("error").textContent = "Error loading data.";
+        console.error("Fetch error:", error);
       });
   </script>
 </body>
