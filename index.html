@@ -40,28 +40,41 @@
     function animateCount(elementId, targetValue, label) {
       const el = document.getElementById(elementId);
       let current = 0;
-      const duration = 1000; // total duration of animation (in ms)
+      const duration = 1000;
       const stepTime = Math.max(10, duration / targetValue);
       const interval = setInterval(() => {
         current++;
         el.textContent = `${current} ${label}`;
-        if (current >= targetValue) {
-          clearInterval(interval);
-        }
+        if (current >= targetValue) clearInterval(interval);
       }, stepTime);
     }
 
-    fetch("https://script.google.com/macros/s/AKfycbxyemkkBH6u-Eu9oefsvHXtiqwjCowBYBl5DC2BkpCSvxH4QXc7sGHkK38O2c4JqYVzfQ/exec")
+    function parseCSV(csvText) {
+      const lines = csvText.trim().split('\n');
+      const data = lines.slice(1).map(row => row.split(','));
+      const names = new Set();
+      const cities = new Set();
+
+      data.forEach(row => {
+        if (row[0]) names.add(row[0].trim());     // Column A = Name
+        if (row[1]) cities.add(row[1].trim());    // Column B = City
+      });
+
+      return { alumni: names.size, cities: cities.size };
+    }
+
+    fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vTAzWy-3EDoIJ5Atz8kYmI8tDWme6nm8qejkSkCQZs8Q5mxV1oBwnz3JudnExKOqXtFoLaLLATdHR6v/pub?output=csv")
       .then(response => {
         if (!response.ok) throw new Error("Network response was not ok");
-        return response.json();
+        return response.text();
       })
-      .then(data => {
+      .then(csvText => {
         document.getElementById("loading").style.display = "none";
         document.getElementById("output").style.display = "block";
 
-        animateCount("alumni-count", data.alumni || 0, "Alumni");
-        animateCount("city-count", data.cities || 0, "Cities");
+        const stats = parseCSV(csvText);
+        animateCount("alumni-count", stats.alumni, "Alumni");
+        animateCount("city-count", stats.cities, "Cities");
       })
       .catch(error => {
         document.getElementById("loading").style.display = "none";
