@@ -74,17 +74,14 @@
       }
 
       data.forEach(row => {
-        if (row[0]) names.add(row[0].trim());
+        if (row[0]) names.add(row[0].trim()); // Name is in column 0
 
-        if (row[1]) {
-          let cleaned = normalize(row[1]);
+        if (row[3]) { // City is in column 3 (4th column)
+          let cleaned = normalize(row[3]);
           let canonical = aliasMap[cleaned] || cleaned;
           if (canonical) cities.add(canonical);
         }
       });
-
-      // Debug log (optional)
-      console.log("Unique cities:", Array.from(cities));
 
       return { alumni: names.size, cities: cities.size };
     }
