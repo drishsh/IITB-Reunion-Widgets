@@ -50,23 +50,44 @@
     }
 
     function parseCSV(csvText) {
-    const lines = csvText.trim().split('\n');
-    const data = lines.slice(1).map(row => row.split(','));
-    const names = new Set();
-    const cities = new Set();
-  
-    data.forEach(row => {
-      if (row[0]) names.add(row[0].trim());
-  
-      if (row[1]) {
-        const cleanedCity = row[1].trim().toLowerCase();
-        if (cleanedCity) cities.add(cleanedCity);
-      }
-    });
-  
-    return { alumni: names.size, cities: cities.size };
-  }
+      const lines = csvText.trim().split('\n');
+      const data = lines.slice(1).map(row => row.split(','));
+      const names = new Set();
+      const cities = new Set();
 
+      const aliasMap = {
+        "new delhi": "delhi",
+        "delhi ": "delhi",
+        "new york city": "new york",
+        "la": "los angeles",
+        "bangalore": "bengaluru",
+        "hyderbad": "hyderabad",
+        "gurugram": "gurgaon"
+      };
+
+      function normalize(text) {
+        return text
+          .toLowerCase()
+          .trim()
+          .replace(/\s+/g, ' ')           // collapse multiple spaces
+          .replace(/[^\w\s]/g, '');       // remove punctuation
+      }
+
+      data.forEach(row => {
+        if (row[0]) names.add(row[0].trim());
+
+        if (row[1]) {
+          let cleaned = normalize(row[1]);
+          let canonical = aliasMap[cleaned] || cleaned;
+          if (canonical) cities.add(canonical);
+        }
+      });
+
+      // Debug log (optional)
+      console.log("Unique cities:", Array.from(cities));
+
+      return { alumni: names.size, cities: cities.size };
+    }
 
     fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vTAzWy-3EDoIJ5Atz8kYmI8tDWme6nm8qejkSkCQZs8Q5mxV1oBwnz3JudnExKOqXtFoLaLLATdHR6v/pub?output=csv")
       .then(response => {
