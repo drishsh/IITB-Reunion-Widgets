@@ -3,134 +3,46 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Alumni Data Summary</title>
+  <title>IITB Reunion Widget</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      text-align: center;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f8f9fa;
+      margin: 0;
       padding: 40px;
-      background-color: #f7f7f7;
+      text-align: center;
     }
     h1 {
-      color: #2c3e50;
+      color: #004080;
     }
-    h2 {
-      font-size: 2em;
-      color: #34495e;
+    .container {
+      background: #ffffff;
+      max-width: 500px;
+      margin: auto;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
-    #loading {
-      font-size: 1.2em;
-      color: #888;
-    }
-    #error {
-      color: red;
-      font-weight: bold;
-    }
-    #output {
-      display: none;
+    button {
+      background-color: #004080;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      font-size: 16px;
+      border-radius: 6px;
       margin-top: 20px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0066cc;
     }
   </style>
 </head>
 <body>
-
-  <h1>IITKGP Alumni Summary</h1>
-  <div id="loading">Loading data...</div>
-  <div id="error"></div>
-
-  <div id="output">
-    <h2><span id="alumni-count">0</span></h2>
-    <h2><span id="city-count">0</span></h2>
+  <div class="container">
+    <h1>IIT Bombay Reunion</h1>
+    <p>Welcome to the 2025 celebration portal 🎓</p>
+    <button onclick="alert('Thanks for visiting the reunion site!')">Click Me</button>
   </div>
-
-  <script>
-    function animateCount(elementId, targetValue, label) {
-      const el = document.getElementById(elementId);
-      let current = 0;
-      const duration = 1000;
-      const stepTime = Math.max(10, duration / targetValue);
-      const interval = setInterval(() => {
-        current++;
-        el.textContent = `${current} ${label}`;
-        if (current >= targetValue) clearInterval(interval);
-      }, stepTime);
-    }
-
-    function parseTSV(tsvText) {
-      const lines = tsvText.trim().split('\n');
-      const headers = lines[0].split('\t').map(h => h.trim().toLowerCase());
-
-      const nameIndex = headers.indexOf("name");
-      const cityIndex = headers.indexOf("city");
-
-      const names = new Set();
-      const cities = new Set();
-
-      const aliasMap = {
-        "new delhi": "delhi",
-        "delhi ": "delhi",
-        "delhi": "delhi",
-        "new york city": "new york",
-        "new york": "new york",
-        "la": "los angeles",
-        "los angeles": "los angeles",
-        "bangalore": "bengaluru",
-        "bengaluru": "bengaluru",
-        "hyderabad": "hyderabad",
-        "gurgaon": "gurgaon",
-        "gurugram": "gurgaon",
-        "short hills": "short hills",
-        "sunnyvale ca": "sunnyvale",
-        "livingston nj": "livingston",
-        "manhasset ny": "manhasset",
-        "princeton junction": "princeton junction",
-        "redwood city": "redwood city",
-        "oak park": "oak park",
-        "fremont": "fremont",
-        "pune": "pune",
-        "mumbai": "mumbai",
-        "austin": "austin",
-        "dubai": "dubai",
-        "chennai": "chennai"
-      };
-
-      function normalizeCity(text) {
-        return (aliasMap[text.toLowerCase().trim().replace(/,\s*[a-z]{2,3}$/i, '')] 
-                || text.toLowerCase().trim().replace(/,\s*[a-z]{2,3}$/i, '')).trim();
-      }
-
-      lines.slice(1).forEach(line => {
-        const columns = line.split('\t');
-        if (columns[nameIndex]) names.add(columns[nameIndex].trim());
-
-        if (columns[cityIndex]) {
-          const canonicalCity = normalizeCity(columns[cityIndex]);
-          if (canonicalCity) cities.add(canonicalCity);
-        }
-      });
-
-      return { alumni: names.size, cities: cities.size };
-    }
-
-    fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vTAzWy-3EDoIJ5Atz8kYmI8tDWme6nm8qejkSkCQZs8Q5mxV1oBwnz3JudnExKOqXtFoLaLLATdHR6v/pub?output=tsv")
-      .then(response => {
-        if (!response.ok) throw new Error("Network response was not ok");
-        return response.text();
-      })
-      .then(tsvText => {
-        document.getElementById("loading").style.display = "none";
-        document.getElementById("output").style.display = "block";
-
-        const stats = parseTSV(tsvText);
-        animateCount("alumni-count", stats.alumni, "Alumni");
-        animateCount("city-count", stats.cities, "Cities");
-      })
-      .catch(error => {
-        document.getElementById("loading").style.display = "none";
-        document.getElementById("error").textContent = "Error loading data. Please try again later.";
-        console.error("Fetch error:", error);
-      });
-  </script>
-
 </body>
 </html>
