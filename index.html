@@ -1,90 +1,136 @@
-<script>
-  function animateCount(elementId, targetValue, label) {
-    const el = document.getElementById(elementId);
-    let current = 0;
-    const duration = 1000;
-    const stepTime = Math.max(10, duration / targetValue);
-    const interval = setInterval(() => {
-      current++;
-      el.textContent = `${current} ${label}`;
-      if (current >= targetValue) clearInterval(interval);
-    }, stepTime);
-  }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Alumni Data Summary</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 40px;
+      background-color: #f7f7f7;
+    }
+    h1 {
+      color: #2c3e50;
+    }
+    h2 {
+      font-size: 2em;
+      color: #34495e;
+    }
+    #loading {
+      font-size: 1.2em;
+      color: #888;
+    }
+    #error {
+      color: red;
+      font-weight: bold;
+    }
+    #output {
+      display: none;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
 
-  function parseCSV(csvText) {
-    const lines = csvText.trim().split('\n');
-    const data = lines.slice(1).map(row => row.split('\t')); // tab-separated
+  <h1>IITKGP Alumni Summary</h1>
+  <div id="loading">Loading data...</div>
+  <div id="error"></div>
 
-    const names = new Set();
-    const cities = new Set();
+  <div id="output">
+    <h2><span id="alumni-count">0</span></h2>
+    <h2><span id="city-count">0</span></h2>
+  </div>
 
-    const aliasMap = {
-      "new delhi": "delhi",
-      "delhi ": "delhi",
-      "delhi": "delhi",
-      "new york city": "new york",
-      "new york": "new york",
-      "la": "los angeles",
-      "los angeles": "los angeles",
-      "bangalore": "bengaluru",
-      "bengaluru": "bengaluru",
-      "hyderabad": "hyderabad",
-      "gurgaon": "gurgaon",
-      "gurugram": "gurgaon",
-      "short hills": "short hills",
-      "sunnyvale ca": "sunnyvale",
-      "livingston nj": "livingston",
-      "manhasset ny": "manhasset",
-      "princeton junction": "princeton junction",
-      "redwood city": "redwood city",
-      "oak park": "oak park",
-      "fremont": "fremont",
-      "pune": "pune",
-      "mumbai": "mumbai",
-      "austin": "austin",
-      "dubai": "dubai",
-      "chennai": "chennai"
-    };
-
-    function normalize(text) {
-      return text
-        .toLowerCase()
-        .trim()
-        .replace(/\s+/g, ' ')           // collapse multiple spaces
-        .replace(/[^\w\s,]/g, '')       // remove special chars except comma
-        .replace(/,\s*[a-z]{2,3}$/i, '') // remove state/country codes (e.g., , CA or , NJ)
-        .trim();
+  <script>
+    function animateCount(elementId, targetValue, label) {
+      const el = document.getElementById(elementId);
+      let current = 0;
+      const duration = 1000;
+      const stepTime = Math.max(10, duration / targetValue);
+      const interval = setInterval(() => {
+        current++;
+        el.textContent = `${current} ${label}`;
+        if (current >= targetValue) clearInterval(interval);
+      }, stepTime);
     }
 
-    data.forEach(row => {
-      if (row[0]) names.add(row[0].trim()); // Name column
+    function parseTSV(tsvText) {
+      const lines = tsvText.trim().split('\n');
+      const headers = lines[0].split('\t').map(h => h.trim().toLowerCase());
 
-      if (row[3]) { // City column
-        let cleaned = normalize(row[3]);
-        let canonical = aliasMap[cleaned] || cleaned;
-        if (canonical) cities.add(canonical);
+      const nameIndex = headers.indexOf("name");
+      const cityIndex = headers.indexOf("city");
+
+      const names = new Set();
+      const cities = new Set();
+
+      const aliasMap = {
+        "new delhi": "delhi",
+        "delhi ": "delhi",
+        "delhi": "delhi",
+        "new york city": "new york",
+        "new york": "new york",
+        "la": "los angeles",
+        "los angeles": "los angeles",
+        "bangalore": "bengaluru",
+        "bengaluru": "bengaluru",
+        "hyderabad": "hyderabad",
+        "gurgaon": "gurgaon",
+        "gurugram": "gurgaon",
+        "short hills": "short hills",
+        "sunnyvale ca": "sunnyvale",
+        "livingston nj": "livingston",
+        "manhasset ny": "manhasset",
+        "princeton junction": "princeton junction",
+        "redwood city": "redwood city",
+        "oak park": "oak park",
+        "fremont": "fremont",
+        "pune": "pune",
+        "mumbai": "mumbai",
+        "austin": "austin",
+        "dubai": "dubai",
+        "chennai": "chennai"
+      };
+
+      function normalizeCity(text) {
+        return (aliasMap[text.toLowerCase().trim().replace(/,\s*[a-z]{2,3}$/i, '')] 
+                || text.toLowerCase().trim().replace(/,\s*[a-z]{2,3}$/i, '')).trim();
       }
-    });
 
-    return { alumni: names.size, cities: cities.size };
-  }
+      lines.slice(1).forEach(line => {
+        const columns = line.split('\t');
+        if (columns[nameIndex]) names.add(columns[nameIndex].trim());
 
-  fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vTAzWy-3EDoIJ5Atz8kYmI8tDWme6nm8qejkSkCQZs8Q5mxV1oBwnz3JudnExKOqXtFoLaLLATdHR6v/pub?output=csv")
-    .then(response => {
-      if (!response.ok) throw new Error("Network response was not ok");
-      return response.text();
-    })
-    .then(csvText => {
-      document.getElementById("loading").style.display = "none";
-      document.getElementById("output").style.display = "block";
+        if (columns[cityIndex]) {
+          const canonicalCity = normalizeCity(columns[cityIndex]);
+          if (canonicalCity) cities.add(canonicalCity);
+        }
+      });
 
-      const stats = parseCSV(csvText);
-      animateCount("alumni-count", stats.alumni, "Alumni");
-      animateCount("city-count", stats.cities, "Cities");
-    })
-    .catch(error => {
-      document.getElementById("loading").style.display = "none";
-      document.getElementById("error").textContent = "Error loading data. Please try again later.";
-      console.error("Fetch error:", error);
-    });
-</script>
+      return { alumni: names.size, cities: cities.size };
+    }
+
+    fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vTAzWy-3EDoIJ5Atz8kYmI8tDWme6nm8qejkSkCQZs8Q5mxV1oBwnz3JudnExKOqXtFoLaLLATdHR6v/pub?output=tsv")
+      .then(response => {
+        if (!response.ok) throw new Error("Network response was not ok");
+        return response.text();
+      })
+      .then(tsvText => {
+        document.getElementById("loading").style.display = "none";
+        document.getElementById("output").style.display = "block";
+
+        const stats = parseTSV(tsvText);
+        animateCount("alumni-count", stats.alumni, "Alumni");
+        animateCount("city-count", stats.cities, "Cities");
+      })
+      .catch(error => {
+        document.getElementById("loading").style.display = "none";
+        document.getElementById("error").textContent = "Error loading data. Please try again later.";
+        console.error("Fetch error:", error);
+      });
+  </script>
+
+</body>
+</html>
