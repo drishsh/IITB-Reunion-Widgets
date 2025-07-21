@@ -1,109 +1,90 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Stats</title>
-  <style>
-    body {
-      background-color: #ffd700;
-      color: #000000;
-      font-family: 'Segoe UI', sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-      height: 100vh;
-      margin: 0;
-    }
-    .stat-line {
-      font-size: 2em;
-      font-weight: bold;
-      margin: 0.2em 0;
-    }
-    #error {
-      color: red;
-      margin-top: 1em;
-    }
-  </style>
-</head>
-<body>
-  <div id="loading" class="stat-line">Loading...</div>
-  <div id="output" style="display: none;">
-    <div class="stat-line" id="alumni-count"></div>
-    <div class="stat-line">Registered From</div>
-    <div class="stat-line" id="city-count"></div>
-  </div>
-  <div id="error"></div>
+<script>
+  function animateCount(elementId, targetValue, label) {
+    const el = document.getElementById(elementId);
+    let current = 0;
+    const duration = 1000;
+    const stepTime = Math.max(10, duration / targetValue);
+    const interval = setInterval(() => {
+      current++;
+      el.textContent = `${current} ${label}`;
+      if (current >= targetValue) clearInterval(interval);
+    }, stepTime);
+  }
 
-  <script>
-    function animateCount(elementId, targetValue, label) {
-      const el = document.getElementById(elementId);
-      let current = 0;
-      const duration = 1000;
-      const stepTime = Math.max(10, duration / targetValue);
-      const interval = setInterval(() => {
-        current++;
-        el.textContent = `${current} ${label}`;
-        if (current >= targetValue) clearInterval(interval);
-      }, stepTime);
+  function parseCSV(csvText) {
+    const lines = csvText.trim().split('\n');
+    const data = lines.slice(1).map(row => row.split('\t')); // tab-separated
+
+    const names = new Set();
+    const cities = new Set();
+
+    const aliasMap = {
+      "new delhi": "delhi",
+      "delhi ": "delhi",
+      "delhi": "delhi",
+      "new york city": "new york",
+      "new york": "new york",
+      "la": "los angeles",
+      "los angeles": "los angeles",
+      "bangalore": "bengaluru",
+      "bengaluru": "bengaluru",
+      "hyderabad": "hyderabad",
+      "gurgaon": "gurgaon",
+      "gurugram": "gurgaon",
+      "short hills": "short hills",
+      "sunnyvale ca": "sunnyvale",
+      "livingston nj": "livingston",
+      "manhasset ny": "manhasset",
+      "princeton junction": "princeton junction",
+      "redwood city": "redwood city",
+      "oak park": "oak park",
+      "fremont": "fremont",
+      "pune": "pune",
+      "mumbai": "mumbai",
+      "austin": "austin",
+      "dubai": "dubai",
+      "chennai": "chennai"
+    };
+
+    function normalize(text) {
+      return text
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, ' ')           // collapse multiple spaces
+        .replace(/[^\w\s,]/g, '')       // remove special chars except comma
+        .replace(/,\s*[a-z]{2,3}$/i, '') // remove state/country codes (e.g., , CA or , NJ)
+        .trim();
     }
 
-    function parseCSV(csvText) {
-      const lines = csvText.trim().split('\n');
-      const data = lines.slice(1).map(row => row.split(','));
-      const names = new Set();
-      const cities = new Set();
+    data.forEach(row => {
+      if (row[0]) names.add(row[0].trim()); // Name column
 
-      const aliasMap = {
-        "new delhi": "delhi",
-        "delhi ": "delhi",
-        "new york city": "new york",
-        "la": "los angeles",
-        "bangalore": "bengaluru",
-        "hyderbad": "hyderabad",
-        "gurugram": "gurgaon"
-      };
-
-      function normalize(text) {
-        return text
-          .toLowerCase()
-          .trim()
-          .replace(/\s+/g, ' ')           // collapse multiple spaces
-          .replace(/[^\w\s]/g, '');       // remove punctuation
+      if (row[3]) { // City column
+        let cleaned = normalize(row[3]);
+        let canonical = aliasMap[cleaned] || cleaned;
+        if (canonical) cities.add(canonical);
       }
+    });
 
-      data.forEach(row => {
-        if (row[0]) names.add(row[0].trim()); // Name is in column 0
+    return { alumni: names.size, cities: cities.size };
+  }
 
-        if (row[3]) { // City is in column 3 (4th column)
-          let cleaned = normalize(row[3]);
-          let canonical = aliasMap[cleaned] || cleaned;
-          if (canonical) cities.add(canonical);
-        }
-      });
+  fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vTAzWy-3EDoIJ5Atz8kYmI8tDWme6nm8qejkSkCQZs8Q5mxV1oBwnz3JudnExKOqXtFoLaLLATdHR6v/pub?output=csv")
+    .then(response => {
+      if (!response.ok) throw new Error("Network response was not ok");
+      return response.text();
+    })
+    .then(csvText => {
+      document.getElementById("loading").style.display = "none";
+      document.getElementById("output").style.display = "block";
 
-      return { alumni: names.size, cities: cities.size };
-    }
-
-    fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vTAzWy-3EDoIJ5Atz8kYmI8tDWme6nm8qejkSkCQZs8Q5mxV1oBwnz3JudnExKOqXtFoLaLLATdHR6v/pub?output=csv")
-      .then(response => {
-        if (!response.ok) throw new Error("Network response was not ok");
-        return response.text();
-      })
-      .then(csvText => {
-        document.getElementById("loading").style.display = "none";
-        document.getElementById("output").style.display = "block";
-
-        const stats = parseCSV(csvText);
-        animateCount("alumni-count", stats.alumni, "Alumni");
-        animateCount("city-count", stats.cities, "Cities");
-      })
-      .catch(error => {
-        document.getElementById("loading").style.display = "none";
-        document.getElementById("error").textContent = "Error loading data. Please try again later.";
-        console.error("Fetch error:", error);
-      });
-  </script>
-</body>
-</html>
+      const stats = parseCSV(csvText);
+      animateCount("alumni-count", stats.alumni, "Alumni");
+      animateCount("city-count", stats.cities, "Cities");
+    })
+    .catch(error => {
+      document.getElementById("loading").style.display = "none";
+      document.getElementById("error").textContent = "Error loading data. Please try again later.";
+      console.error("Fetch error:", error);
+    });
+</script>
