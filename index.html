@@ -30,26 +30,22 @@
 <body>
   <div id="loading" class="stat-line">Loading...</div>
   <div id="output" style="display: none;">
-    <div class="stat-line" id="combined-line"></div>
+    <div class="stat-line" id="alumni-count"></div>
+    <div class="stat-line">Registered From</div>
+    <div class="stat-line" id="city-count"></div>
   </div>
   <div id="error"></div>
 
   <script>
-    function pluralize(word, count) {
-      return count === 1 ? word : word + 's';
-    }
-
-    function animateCombined(alumni, cities) {
-      const el = document.getElementById("combined-line");
-      let a = 0, c = 0;
+    function animateCount(elementId, targetValue, label) {
+      const el = document.getElementById(elementId);
+      let current = 0;
       const duration = 1000;
-      const steps = 60;
-      const stepTime = duration / steps;
+      const stepTime = Math.max(10, duration / targetValue);
       const interval = setInterval(() => {
-        if (a < alumni) a++;
-        if (c < cities) c++;
-        el.textContent = `${a} ${pluralize("alumni", a)} are registered from ${c} ${pluralize("city", c)}`;
-        if (a >= alumni && c >= cities) clearInterval(interval);
+        current++;
+        el.textContent = ${current} ${label};
+        if (current >= targetValue) clearInterval(interval);
       }, stepTime);
     }
 
@@ -78,11 +74,9 @@
       }
 
       data.forEach(row => {
-        // Name is in column A (index 0)
-        if (row[0]) names.add(row[0].trim());
+        if (row[0]) names.add(row[0].trim()); // Name is in column 0
 
-        // City is in column D (index 3)
-        if (row[3]) {
+        if (row[3]) { // City is in column 3 (4th column)
           let cleaned = normalize(row[3]);
           let canonical = aliasMap[cleaned] || cleaned;
           if (canonical) cities.add(canonical);
@@ -102,7 +96,8 @@
         document.getElementById("output").style.display = "block";
 
         const stats = parseCSV(csvText);
-        animateCombined(stats.alumni, stats.cities);
+        animateCount("alumni-count", stats.alumni, "Alumni");
+        animateCount("city-count", stats.cities, "Cities");
       })
       .catch(error => {
         document.getElementById("loading").style.display = "none";
