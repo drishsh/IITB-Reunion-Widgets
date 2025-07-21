@@ -3,46 +3,112 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>IITB Reunion Widget</title>
+  <title>Stats</title>
   <style>
     body {
+      background-color: #ffd700;
+      color: #000000;
       font-family: 'Segoe UI', sans-serif;
-      background-color: #f8f9fa;
-      margin: 0;
-      padding: 40px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
       text-align: center;
+      height: 100vh;
+      margin: 0;
     }
-    h1 {
-      color: #004080;
+    .stat-line {
+      font-size: 2em;
+      font-weight: bold;
+      margin: 0.2em 0;
     }
-    .container {
-      background: #ffffff;
-      max-width: 500px;
-      margin: auto;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    }
-    button {
-      background-color: #004080;
-      color: white;
-      border: none;
-      padding: 12px 20px;
-      font-size: 16px;
-      border-radius: 6px;
-      margin-top: 20px;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #0066cc;
+    #error {
+      color: red;
+      margin-top: 1em;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>IIT Bombay Reunion</h1>
-    <p>Welcome to the 2025 celebration portal 🎓</p>
-    <button onclick="alert('Thanks for visiting the reunion site!')">Click Me</button>
+  <div id="loading" class="stat-line">Loading...</div>
+  <div id="output" style="display: none;">
+    <div class="stat-line" id="combined-line"></div>
   </div>
+  <div id="error"></div>
+
+  <script>
+    function pluralize(word, count) {
+      return count === 1 ? word : word + 's';
+    }
+
+    function animateCombined(alumni, cities) {
+      const el = document.getElementById("combined-line");
+      let a = 0, c = 0;
+      const duration = 1000;
+      const steps = 60;
+      const stepTime = duration / steps;
+      const interval = setInterval(() => {
+        if (a < alumni) a++;
+        if (c < cities) c++;
+        el.textContent = `${a} ${pluralize("alumni", a)} are registered from ${c} ${pluralize("city", c)}`;
+        if (a >= alumni && c >= cities) clearInterval(interval);
+      }, stepTime);
+    }
+
+    function parseCSV(csvText) {
+      const lines = csvText.trim().split('\n');
+      const data = lines.slice(1).map(row => row.split(','));
+      const names = new Set();
+      const cities = new Set();
+
+      const aliasMap = {
+        "new delhi": "delhi",
+        "delhi ": "delhi",
+        "new york city": "new york",
+        "la": "los angeles",
+        "bangalore": "bengaluru",
+        "hyderbad": "hyderabad",
+        "gurugram": "gurgaon"
+      };
+
+      function normalize(text) {
+        return text
+          .toLowerCase()
+          .trim()
+          .replace(/\s+/g, ' ')           // collapse multiple spaces
+          .replace(/[^\w\s]/g, '');       // remove punctuation
+      }
+
+      data.forEach(row => {
+        // Name is in column A (index 0)
+        if (row[0]) names.add(row[0].trim());
+
+        // City is in column D (index 3)
+        if (row[3]) {
+          let cleaned = normalize(row[3]);
+          let canonical = aliasMap[cleaned] || cleaned;
+          if (canonical) cities.add(canonical);
+        }
+      });
+
+      return { alumni: names.size, cities: cities.size };
+    }
+
+    fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vTAzWy-3EDoIJ5Atz8kYmI8tDWme6nm8qejkSkCQZs8Q5mxV1oBwnz3JudnExKOqXtFoLaLLATdHR6v/pub?output=csv")
+      .then(response => {
+        if (!response.ok) throw new Error("Network response was not ok");
+        return response.text();
+      })
+      .then(csvText => {
+        document.getElementById("loading").style.display = "none";
+        document.getElementById("output").style.display = "block";
+
+        const stats = parseCSV(csvText);
+        animateCombined(stats.alumni, stats.cities);
+      })
+      .catch(error => {
+        document.getElementById("loading").style.display = "none";
+        document.getElementById("error").textContent = "Error loading data. Please try again later.";
+        console.error("Fetch error:", error);
+      });
+  </script>
 </body>
 </html>
